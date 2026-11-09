@@ -82,7 +82,9 @@ public static class SecurityDescriptorCodec
         foreach (var ace in aces)
             acl.InsertAce(index++, ToGeneric(ace));
 
-        var rsd = new RawSecurityDescriptor(control & DaclControlMask, null, null, null, acl);
+        // DiscretionaryAclPresent is required, otherwise Windows treats the DACL as absent and emits an empty string.
+        var rsd = new RawSecurityDescriptor(
+            ControlFlags.DiscretionaryAclPresent | (control & DaclControlMask), null, null, null, acl);
         return rsd.GetSddlForm(AccessControlSections.Access);
     }
 
