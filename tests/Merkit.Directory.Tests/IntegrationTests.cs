@@ -157,7 +157,9 @@ public class IntegrationTests : IClassFixture<LdsFixture>
 
         var named = new DaclModel(dacl.Aces.Select(a => a with { TrusteeName = names[a.Sid] }).ToList(), dacl.Control);
         var report = AclLinter.Analyze(named, sidsResolved: true);
-        Assert.True(report.Summary.OrphanedSids >= 1);
+        Assert.True(report.Summary.OrphanedSids >= 1,
+            $"sid={sid}; domainSid={Merkit.Core.Model.WellKnownSids.IsDomainSid(sid)}; items=" +
+            string.Join(" | ", report.Items.Select(i => $"{i.Ace.Sid}:{i.Category}:name={(i.Ace.TrusteeName ?? "null")}")));
     }
 
     [LdapFact]

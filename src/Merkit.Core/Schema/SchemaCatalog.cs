@@ -47,7 +47,7 @@ public sealed class StaticSchemaCatalog : ISchemaCatalog
         Add(SchemaKind.Attribute, "physicalDeliveryOfficeName", "physicalDeliveryOfficeName", "bf9679f7-0de6-11d0-a285-00aa003049e2");
         Add(SchemaKind.Attribute, "title", "title", "bf967a55-0de6-11d0-a285-00aa003049e2");
         Add(SchemaKind.Attribute, "department", "department", "bf96794f-0de6-11d0-a285-00aa003049e2");
-        Add(SchemaKind.Attribute, "manager", "manager", "bf9679e4-0de6-11d0-a285-00aa003049e2");
+        Add(SchemaKind.Attribute, "manager", "manager", "bf9679b5-0de6-11d0-a285-00aa003049e2");
         Add(SchemaKind.Attribute, "mail", "mail", "bf967961-0de6-11d0-a285-00aa003049e2");
 
         // Extended rights (rightsGuid values are fixed).
