@@ -98,4 +98,10 @@ Add-Rule $ouUsers (Get-Sid $groups['DLG_Obsolete']) 'ReadProperty, WriteProperty
 Add-Rule $ouUsers (Get-Sid $groups['DLG_Helpdesk_PwdReset']) 'ReadProperty' 'Allow' 'Descendents'
 $groups['DLG_Obsolete'].DeleteTree()
 
+# AD LDS hands out its own SID format (S-1-<big number>-...), which is not a domain SID. A real Active Directory
+# orphan looks like S-1-5-21-..., so add one with that shape too. Merkit only calls S-1-5-21 SIDs "orphaned",
+# because other kinds of SID (for example Entra ID ones) can legitimately have no name on-premises.
+$formerDomainGroup = New-Object System.Security.Principal.SecurityIdentifier('S-1-5-21-3623811015-3361044348-30300820-51234')
+Add-Rule $ouUsers $formerDomainGroup 'ReadProperty, WriteProperty' 'Allow' 'Descendents'
+
 Write-Host 'Done.'

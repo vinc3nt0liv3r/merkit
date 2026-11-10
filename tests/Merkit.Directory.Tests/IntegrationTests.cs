@@ -138,28 +138,34 @@ public class IntegrationTests : IClassFixture<LdsFixture>
     }
 
     [LdapFact]
-    public async Task A_deleted_group_shows_up_as_an_orphaned_sid()
+    public async Task A_deleted_group_cannot_be_named_and_a_former_domain_group_is_flagged_orphaned()
     {
         string ou = await _fx.CreateTestOuAsync();
         string sid = _fx.CreateGroup(ou, "DLG_ToBeDeleted", out string groupDn);
+        // AD LDS issues SIDs in its own format, so also use a SID shaped like a real domain SID (S-1-5-21-...).
+        const string domainShaped = "S-1-5-21-3623811015-3361044348-30300820-51234";
         _fx.Gate.Enable();
 
-        var ace = Ace.Create(sid, "DLG_ToBeDeleted", AceAccessType.Allow, (int)(AdRights.ReadProperty | AdRights.WriteProperty), InheritanceScope.Descendents);
-        var applied = await _fx.ApplyChangeAsync(ou, d => AclOperations.AddAces(d, new[] { ace }), "add ace for group");
+        var rights = (int)(AdRights.ReadProperty | AdRights.WriteProperty);
+        var applied = await _fx.ApplyChangeAsync(ou, d => AclOperations.AddAces(d, new[]
+        {
+            Ace.Create(sid, "DLG_ToBeDeleted", AceAccessType.Allow, rights, InheritanceScope.Descendents),
+            Ace.Create(domainShaped, null, AceAccessType.Allow, rights, InheritanceScope.Descendents),
+        }), "add aces for orphan test");
         Assert.True(applied.Succeeded, applied.Message);
 
         _fx.DeleteObject(groupDn);
 
-        var resolver = new LdapSidResolver(_fx.Dir!.Ldap); // fresh instance: no cached name
+        var resolver = new LdapSidResolver(_fx.Dir!.Ldap); // fresh instance: no cached names
         var dacl = SecurityDescriptorCodec.ParseSddl(await _fx.Dir.AclStore.ReadDaclSddlAsync(ou));
         var names = await resolver.ResolveAsync(dacl.Aces.Select(a => a.Sid));
         Assert.Null(names[sid]);
+        Assert.Null(names[domainShaped]);
 
         var named = new DaclModel(dacl.Aces.Select(a => a with { TrusteeName = names[a.Sid] }).ToList(), dacl.Control);
         var report = AclLinter.Analyze(named, sidsResolved: true);
-        Assert.True(report.Summary.OrphanedSids >= 1,
-            $"sid={sid}; domainSid={Merkit.Core.Model.WellKnownSids.IsDomainSid(sid)}; items=" +
-            string.Join(" | ", report.Items.Select(i => $"{i.Ace.Sid}:{i.Category}:name={(i.Ace.TrusteeName ?? "null")}")));
+        var orphan = Assert.Single(report.Items, i => i.Ace.Sid == domainShaped);
+        Assert.Equal(AceCategory.OrphanedSid, orphan.Category);
     }
 
     [LdapFact]
