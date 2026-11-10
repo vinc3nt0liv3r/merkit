@@ -36,7 +36,7 @@ public sealed class LdsFixture : IDisposable
 
     public LdsFixture()
     {
-        Directory.CreateDirectory(_temp);
+        System.IO.Directory.CreateDirectory(_temp);
         Vault = new BackupVault(Path.Combine(_temp, "backups"));
         AuditPath = Path.Combine(_temp, "audit.jsonl");
 
@@ -119,6 +119,6 @@ public sealed class LdsFixture : IDisposable
             }
             Dir.Dispose();
         }
-        try { Directory.Delete(_temp, true); } catch (IOException) { }
+        try { System.IO.Directory.Delete(_temp, true); } catch (IOException) { }
     }
 }

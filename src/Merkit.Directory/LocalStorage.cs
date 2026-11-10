@@ -16,7 +16,7 @@ public static class LocalStorage
         string shared = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Merkit", leaf);
         try
         {
-            Directory.CreateDirectory(shared);
+            System.IO.Directory.CreateDirectory(shared);
             return shared;
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
