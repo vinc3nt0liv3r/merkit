@@ -1,0 +1,111 @@
+name: remote-test
+
+# Starts a temporary Windows machine with a test directory and opens Remote Desktop to it,
+# reachable ONLY through your private Tailscale network. Start it by hand from the Actions tab.
+# Setup steps: docs/REMOTE-TESTING.md
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: 'How long to keep the machine (10-120 minutes)'
+        required: true
+        default: '60'
+      seed_lab_data:
+        description: 'Fill the test directory with sample OUs, groups and permissions'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: remote-test
+  cancel-in-progress: true
+
+jobs:
+  session:
+    # Only the repository owner can open a session.
+    if: github.actor == github.repository_owner
+    runs-on: windows-latest
+    timeout-minutes: 140
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check settings
+        shell: pwsh
+        env:
+          TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+          RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+          MINUTES: ${{ inputs.minutes }}
+        run: |
+          $missing = @('TS_OAUTH_CLIENT_ID', 'TS_OAUTH_SECRET', 'RDP_PASSWORD') |
+              Where-Object { [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($_)) }
+          if ($missing) { throw "Missing repository secrets: $($missing -join ', '). See docs/REMOTE-TESTING.md." }
+          if ($env:RDP_PASSWORD.Length -lt 16) { throw 'RDP_PASSWORD must be at least 16 characters.' }
+          if ($env:MINUTES -notmatch '^\d{2,3}$' -or [int]$env:MINUTES -lt 10 -or [int]$env:MINUTES -gt 120) {
+              throw 'minutes must be a number from 10 to 120.'
+          }
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        run: dotnet build Merkit.sln -c Release
+
+      - name: Create the AD LDS test directory
+        shell: powershell
+        run: ./tools/lds/Install-AdLds.ps1
+
+      - name: Fill it with sample data
+        if: ${{ inputs.seed_lab_data }}
+        shell: powershell
+        run: ./tools/lds/Seed-Lab.ps1
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:merkit-ci
+          hostname: merkit-test-${{ github.run_id }}
+
+      - name: Turn on Remote Desktop (Tailscale only)
+        shell: powershell
+        env:
+          RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+        run: ./tools/remote/Enable-SecureRdp.ps1
+
+      - name: Show how to connect
+        shell: powershell
+        run: |
+          $ts = Join-Path $env:ProgramFiles 'Tailscale\tailscale.exe'
+          if (-not (Test-Path $ts)) { $ts = 'tailscale' }
+          $ip = (& $ts ip -4 | Select-Object -First 1)
+          Write-Host '=============================================================='
+          Write-Host " Remote Desktop address : $ip"
+          Write-Host ' Machine name           : merkit-test-${{ github.run_id }}'
+          Write-Host ' User name              : merkit'
+          Write-Host ' Password               : your RDP_PASSWORD secret'
+          Write-Host ' Test directory         : localhost:50389, CN=MerkitTest,DC=local'
+          Write-Host '=============================================================='
+
+      - name: Keep the session open
+        shell: powershell
+        env:
+          MINUTES: ${{ inputs.minutes }}
+        run: ./tools/remote/Wait-ForSession.ps1 -Minutes ([int]$env:MINUTES)
+
+      - name: Close everything
+        if: always()
+        shell: powershell
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 1 -ErrorAction SilentlyContinue
+          Get-NetFirewallRule -DisplayGroup 'Remote Desktop' -ErrorAction SilentlyContinue | Disable-NetFirewallRule
+          Remove-LocalUser -Name merkit -ErrorAction SilentlyContinue
+          $ts = Join-Path $env:ProgramFiles 'Tailscale\tailscale.exe'
+          if (Test-Path $ts) { & $ts logout 2>$null }

@@ -1,0 +1,48 @@
+name: directory-integration
+
+# Runs the directory layer against a real LDAP directory (AD LDS) on a Windows runner.
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'tests/**', 'tools/lds/**', '.github/workflows/directory-integration.yml']
+  pull_request:
+    paths: ['src/**', 'tests/**', 'tools/lds/**', '.github/workflows/directory-integration.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adlds:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Create the AD LDS test directory
+        shell: powershell
+        run: ./tools/lds/Install-AdLds.ps1
+
+      - name: Fill it with sample data
+        shell: powershell
+        run: ./tools/lds/Seed-Lab.ps1
+
+      - name: Integration tests
+        env:
+          MERKIT_TEST_LDAP_SERVER: localhost
+          MERKIT_TEST_LDAP_PORT: '50389'
+        run: dotnet test tests/Merkit.Directory.Tests/Merkit.Directory.Tests.csproj -c Release --logger "trx;LogFileName=directory.trx" --results-directory TestResults
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: directory-test-results
+          path: TestResults
