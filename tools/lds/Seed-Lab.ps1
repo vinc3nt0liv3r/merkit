@@ -17,7 +17,7 @@
 param(
     [string]$Server = 'localhost',
     [int]$Port = 50389,
-    [string]$BaseDn = 'CN=MerkitTest,DC=local',
+    [string]$BaseDn = 'DC=merkit,DC=test',
     [switch]$ActiveDirectory
 )
 

@@ -91,7 +91,7 @@ jobs:
           Write-Host ' Machine name           : merkit-test-${{ github.run_id }}'
           Write-Host ' User name              : merkit'
           Write-Host ' Password               : your RDP_PASSWORD secret'
-          Write-Host ' Test directory         : localhost:50389, CN=MerkitTest,DC=local'
+          Write-Host ' Test directory         : localhost:50389, DC=merkit,DC=test'
           Write-Host '=============================================================='
 
       - name: Keep the session open

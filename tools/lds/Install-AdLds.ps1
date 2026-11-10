@@ -16,7 +16,7 @@ param(
     [string]$InstanceName = 'MerkitTest',
     [int]$LdapPort = 50389,
     [int]$SslPort = 50636,
-    [string]$PartitionDn = 'CN=MerkitTest,DC=local',
+    [string]$PartitionDn = 'DC=merkit,DC=test',
     [string]$Root = 'C:\MerkitLds'
 )
 

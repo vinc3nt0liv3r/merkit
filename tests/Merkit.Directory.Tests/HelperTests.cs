@@ -32,7 +32,7 @@ public class HelperTests
     [InlineData("Sales, East", "Sales\\, East")]
     [InlineData("a+b", "a\\+b")]
     [InlineData("say \"hi\"", "say \\\"hi\\\"")]
-    [InlineData("a;b", "a\;b")]
+    [InlineData("a;b", "a\\;b")]
     [InlineData("<x>", "\\<x\\>")]
     [InlineData("#hash", "\\#hash")]
     [InlineData(" lead", "\\ lead")]
@@ -76,8 +76,8 @@ public class HelperTests
     public void Root_dse_falls_back_to_first_non_system_naming_context()
     {
         var rootDse = new RootDseInfo(null, null, "CN=Configuration,CN={X}", "CN=Schema,CN=Configuration,CN={X}", null,
-            new[] { "CN=Configuration,CN={X}", "CN=Schema,CN=Configuration,CN={X}", "CN=MerkitTest,DC=local" });
-        Assert.Equal("CN=MerkitTest,DC=local", rootDse.DomainNamingContext);
+            new[] { "CN=Configuration,CN={X}", "CN=Schema,CN=Configuration,CN={X}", "DC=merkit,DC=test" });
+        Assert.Equal("DC=merkit,DC=test", rootDse.DomainNamingContext);
     }
 
     [Fact]
