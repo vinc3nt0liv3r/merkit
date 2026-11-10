@@ -94,4 +94,29 @@ while ($true) {
     }
 }
 
+# Make sure the user, inetOrgPerson and userProxy classes exist. The installer's own LDIF import is not reliable
+# on every Windows build, and importing again is harmless ("-k" ignores entries that already exist).
+$rootDse = New-Object System.DirectoryServices.DirectoryEntry("LDAP://localhost:$LdapPort/RootDSE")
+$configDn = [string]$rootDse.Properties['configurationNamingContext'].Value
+$schemaDn = [string]$rootDse.Properties['schemaNamingContext'].Value
+
+function Test-SchemaClass([string]$name) {
+    $searcher = New-Object System.DirectoryServices.DirectorySearcher(
+        (New-Object System.DirectoryServices.DirectoryEntry("LDAP://localhost:$LdapPort/$schemaDn")),
+        "(&(objectClass=classSchema)(lDAPDisplayName=$name))")
+    return [bool]$searcher.FindOne()
+}
+
+if (-not (Test-SchemaClass 'user')) {
+    foreach ($ldf in 'MS-InetOrgPerson.LDF', 'MS-User.LDF', 'MS-UserProxy.LDF') {
+        $file = Join-Path $env:windir "ADAM\$ldf"
+        if (-not (Test-Path $file)) { throw "Schema file $file was not found." }
+        Write-Host "Importing $ldf"
+        & ldifde.exe -i -f $file -s "localhost:$LdapPort" -j $env:TEMP -k -c 'CN=Configuration,DC=X' '#ConfigurationNamingContext' 2>&1 |
+            ForEach-Object { Write-Host "  $_" }
+    }
+}
+if (-not (Test-SchemaClass 'user')) { throw "The 'user' class is still missing from the AD LDS schema." }
+Write-Host "Schema check: 'user' class present."
+
 Write-Host "AD LDS is ready on localhost:$LdapPort, partition $PartitionDn"
