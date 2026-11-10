@@ -68,12 +68,28 @@ SourceServer=
 SourceDomain=
 "@ | Set-Content -Path $answerFile -Encoding ASCII
 
-    Write-Host "Creating AD LDS instance '$InstanceName' (LDAP $LdapPort, partition $PartitionDn)..."
-    $process = Start-Process -FilePath $installer -ArgumentList "/answer:`"$answerFile`"" -Wait -PassThru -NoNewWindow
-    if ($process.ExitCode -ne 0) {
+    # The installer sometimes fails on a fresh runner with a transient internal error (seen: 0x80072008) and rolls
+    # itself back. Retry a few times from a clean data folder before giving up.
+    $maxAttempts = 3
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        Write-Host "Creating AD LDS instance '$InstanceName' (LDAP $LdapPort, partition $PartitionDn), attempt $attempt of $maxAttempts..."
+        $process = Start-Process -FilePath $installer -ArgumentList "/answer:`"$answerFile`"" -Wait -PassThru -NoNewWindow
+        if ($process.ExitCode -eq 0) { break }
+
         $log = Join-Path $env:windir 'Debug\adamsetup.log'
         if (Test-Path $log) { Get-Content $log -Tail 40 | ForEach-Object { Write-Host $_ } }
-        throw "adaminstall.exe failed with exit code $($process.ExitCode)."
+        if ($attempt -eq $maxAttempts) {
+            throw "adaminstall.exe failed with exit code $($process.ExitCode) after $maxAttempts attempts."
+        }
+        Write-Warning "adaminstall.exe failed with exit code $($process.ExitCode). Cleaning up and retrying in 20 seconds."
+        if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+            $uninstaller = Join-Path $env:windir 'ADAM\adamuninstall.exe'
+            if (Test-Path $uninstaller) {
+                Start-Process -FilePath $uninstaller -ArgumentList "/i:$InstanceName /q" -Wait -NoNewWindow | Out-Null
+            }
+        }
+        Get-ChildItem -Path $data, $logs -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 20
     }
 }
 
