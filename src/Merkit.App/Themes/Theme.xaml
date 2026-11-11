@@ -34,9 +34,8 @@
   <FontFamily x:Key="IconFont">Segoe MDL2 Assets</FontFamily>
 
   <!-- Text -->
-  <Style TargetType="TextBlock">
-    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-  </Style>
+  <!-- No default TextBlock colour here on purpose: it would also override the colour a button or header gives its text.
+       The windows set the default text colour and everything inherits it. -->
 
   <Style x:Key="H1" TargetType="TextBlock">
     <Setter Property="FontSize" Value="20"/>

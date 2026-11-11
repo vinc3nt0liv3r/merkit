@@ -5,6 +5,7 @@
         Title="Merkit - Active Directory Delegation Studio"
         Width="1360" Height="860" MinWidth="1000" MinHeight="640"
         Background="{StaticResource BgBrush}"
+        Foreground="{StaticResource TextBrush}"
         FontFamily="Segoe UI" FontSize="13"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
 

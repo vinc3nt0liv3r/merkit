@@ -24,7 +24,7 @@ internal static class ScreenshotRunner
             window.Width = 1360;
             window.Height = 860;
             await Settle();
-            Capture(window, Path.Combine(folder, "01-start.png"));
+            Capture(window, Path.Combine(folder, "01-start.png"), 1360, 820);
 
             await vm.SetBackendAsync(new SampleBackend(services));
             await Settle();
@@ -33,7 +33,7 @@ internal static class ScreenshotRunner
             {
                 await vm.SelectNodeAsync(child);
                 await Settle();
-                Capture(window, Path.Combine(folder, $"{n++:00}-ou-{Safe(child.Name)}.png"));
+                Capture(window, Path.Combine(folder, $"{n++:00}-ou-{Safe(child.Name)}.png"), 1360, 820);
             }
 
             // Stage some changes, then show the main window with the pending bar and the review dialog.
@@ -43,7 +43,7 @@ internal static class ScreenshotRunner
             vm.Roots[0].IsSelected = true;
             await vm.SelectNodeAsync(vm.Roots[0].Children.First(c => !c.IsPlaceholder));
             await Settle();
-            Capture(window, Path.Combine(folder, $"{n++:00}-staged.png"));
+            Capture(window, Path.Combine(folder, $"{n++:00}-staged.png"), 1360, 820);
 
             var diff = AclOperations.Diff(state.Baseline, state.Working);
             await Dialog(window, new ReviewDialogViewModel(state.Dn, diff, vm.Schema,
@@ -88,14 +88,32 @@ internal static class ScreenshotRunner
         await d.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
     }
 
-    private static void Capture(Window w, string path)
+    /// <summary>
+    /// Renders the window's content at the given size, whatever size the runner's screen allows the real window to be.
+    /// Layout is arranged and drawn straight away, before WPF can lay the window out again.
+    /// </summary>
+    private static void Capture(Window w, string path, double width = 0, double height = 0)
     {
         w.UpdateLayout();
         var dpi = VisualTreeHelper.GetDpi(w);
-        int pw = Math.Max(1, (int)Math.Ceiling(w.ActualWidth * dpi.DpiScaleX));
-        int ph = Math.Max(1, (int)Math.Ceiling(w.ActualHeight * dpi.DpiScaleY));
+        if (w.Content is not FrameworkElement content) return;
+        if (width <= 0) width = w.ActualWidth;
+        if (height <= 0) height = w.ActualHeight;
+        content.Measure(new Size(width, height));
+        content.Arrange(new Rect(0, 0, width, height));
+
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawRectangle(w.Background, null, new Rect(0, 0, width, height));
+            dc.DrawRectangle(new VisualBrush(content) { Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top },
+                             null, new Rect(0, 0, width, height));
+        }
+
+        int pw = Math.Max(1, (int)Math.Ceiling(width * dpi.DpiScaleX));
+        int ph = Math.Max(1, (int)Math.Ceiling(height * dpi.DpiScaleY));
         var bitmap = new RenderTargetBitmap(pw, ph, 96 * dpi.DpiScaleX, 96 * dpi.DpiScaleY, PixelFormats.Pbgra32);
-        bitmap.Render(w);
+        bitmap.Render(visual);
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var stream = File.Create(path);

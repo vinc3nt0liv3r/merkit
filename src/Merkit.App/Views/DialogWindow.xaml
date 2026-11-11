@@ -5,6 +5,7 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip"
         Background="{StaticResource BgBrush}"
+        Foreground="{StaticResource TextBrush}"
         FontFamily="Segoe UI" FontSize="13"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
   <ContentControl x:Name="Host" IsTabStop="False"/>
