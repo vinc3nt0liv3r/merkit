@@ -11,7 +11,7 @@ on:
       - '.github/workflows/ui-screenshots.yml'
 
 permissions:
-  contents: read
+  contents: write   # only used to refresh the "ui-screenshots" preview branch below
 
 jobs:
   shots:
@@ -39,3 +39,18 @@ jobs:
         with:
           name: ui-screenshots
           path: shots
+
+      # Publish the pictures on a branch of their own so they can be looked at without downloading an artifact.
+      # They show the built-in sample domain only. The branch is rewritten on every run.
+      - name: Publish preview branch
+        if: github.event_name != 'pull_request' && always() && hashFiles('shots/*.png') != ''
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions'
+          git config user.email 'github-actions@users.noreply.github.com'
+          git checkout --orphan ui-screenshots
+          git rm -rf --quiet . 2>$null
+          Copy-Item shots\* . -Include *.png
+          git add *.png
+          git commit -m "UI screenshots for ${env:GITHUB_SHA}"
+          git push --force origin ui-screenshots
