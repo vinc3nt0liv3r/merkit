@@ -1,3 +1,4 @@
+using System.IO;
 using Merkit.App.Mvvm;
 using Merkit.App.Services;
 using Merkit.App.ViewModels;
@@ -79,7 +80,7 @@ public sealed class AppFixture : IDisposable
     public void Dispose()
     {
         Vm.Backend?.Dispose();
-        try { if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true); }
+        try { if (System.IO.Directory.Exists(_root)) System.IO.Directory.Delete(_root, recursive: true); }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
     }

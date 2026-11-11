@@ -1,3 +1,4 @@
+using System.IO;
 using Merkit.App.Services;
 using Merkit.App.ViewModels;
 using Xunit;
@@ -179,7 +180,7 @@ public class MainViewModelTests
     public async Task Write_mode_is_refused_when_the_audit_log_cannot_be_written()
     {
         string root = Path.Combine(Path.GetTempPath(), "merkit-app-tests-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root);
+        System.IO.Directory.CreateDirectory(root);
         string notAFolder = Path.Combine(root, "log-is-a-file");
         File.WriteAllText(notAFolder, "x");
         var services = new AppServices(Path.Combine(root, "b"), Path.Combine(root, "s"), notAFolder);
