@@ -22,6 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- WPF projects leave System.IO out of the implicit usings because of System.Windows.Shapes.Path. Not needed here. -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Merkit.App.Tests" />
   </ItemGroup>
 
