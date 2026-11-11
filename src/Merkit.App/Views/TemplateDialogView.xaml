@@ -1,0 +1,86 @@
+<UserControl x:Class="Merkit.App.Views.TemplateDialogView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid Margin="24,20,24,18">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel Margin="0,0,0,12">
+      <TextBlock Text="Add a delegation" Style="{StaticResource H1}"/>
+      <TextBlock Text="{Binding TargetDn}" Style="{StaticResource Muted}" FontFamily="{StaticResource MonoFont}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="280"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+
+      <Border Style="{StaticResource Card}">
+        <Grid>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <TextBlock Text="1. Choose what to delegate" Style="{StaticResource H2}" Margin="12,10,12,6"/>
+          <ListBox Grid.Row="1" ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}" BorderThickness="0" Background="Transparent"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Margin="2,5">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                  <TextBlock Text="{Binding Description}" Style="{StaticResource Muted}" FontSize="12" TextWrapping="Wrap"/>
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Grid>
+      </Border>
+
+      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+          <TextBlock Text="2. Choose who receives it" Style="{StaticResource H2}"/>
+          <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,2,0,8"
+                     Text="Delegate to a group, not to individual people. Search by name, or paste a SID."/>
+          <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0">
+              <TextBox.InputBindings><KeyBinding Key="Return" Command="{Binding SearchCommand}"/></TextBox.InputBindings>
+            </TextBox>
+            <Button Grid.Column="1" Content="Search" Command="{Binding SearchCommand}" Padding="14,6"/>
+          </Grid>
+          <TextBlock Text="{Binding SearchMessage}" Style="{StaticResource Muted}" Margin="0,6,0,0" TextWrapping="Wrap"
+                     Visibility="{Binding SearchMessage, Converter={StaticResource TextToVis}}"/>
+          <ListBox ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedPrincipal}" MaxHeight="140" Margin="0,8,0,0"
+                   Visibility="{Binding Results.Count, Converter={StaticResource CountToVis}}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal" Margin="2,2">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                  <TextBlock Text="{Binding Kind}" Style="{StaticResource Muted}"/>
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <TextBlock Text="Or paste a SID" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/>
+          <TextBox Text="{Binding ManualSid, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}"/>
+
+          <TextBlock Text="3. What will be added" Style="{StaticResource H2}" Margin="0,16,0,6"/>
+          <Border Background="{StaticResource DangerSoftBrush}" CornerRadius="6" Padding="12,8" Margin="0,0,0,8"
+                  Visibility="{Binding Error, Converter={StaticResource NullToVis}}">
+            <TextBlock Text="{Binding Error}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"/>
+          </Border>
+          <ItemsControl ItemsSource="{Binding Warnings}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Background="{StaticResource WarnSoftBrush}" CornerRadius="6" Padding="12,8" Margin="0,0,0,6">
+                  <TextBlock Text="{Binding}" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap"/>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <ItemsControl ItemsSource="{Binding PreviewLines}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,4"/></DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+      <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="0,0,8,0" MinWidth="90" IsCancel="True"/>
+      <Button Content="Stage this delegation" Style="{StaticResource PrimaryButton}" Command="{Binding StageCommand}" MinWidth="150" Padding="14,7"/>
+    </StackPanel>
+  </Grid>
+</UserControl>

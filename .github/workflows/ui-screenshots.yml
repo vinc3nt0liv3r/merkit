@@ -1,0 +1,41 @@
+name: ui-screenshots
+
+# Builds a special copy of the app that renders its own windows to PNG files, so the interface can be reviewed.
+# The shipped application is built without this code.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/Merkit.App/**'
+      - '.github/workflows/ui-screenshots.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  shots:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build screenshot edition
+        run: dotnet build src/Merkit.App/Merkit.App.csproj -c Release -p:MerkitScreenshots=true -o out
+
+      - name: Render windows
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath out\Merkit.exe -ArgumentList '--screenshots', 'shots' -PassThru
+          if (-not $process.WaitForExit(180000)) { $process.Kill(); throw 'Merkit did not finish in time.' }
+          Get-ChildItem shots | Format-Table Name, Length
+          if (Test-Path shots\error.txt) { Get-Content shots\error.txt; throw 'Screenshot run failed.' }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-screenshots
+          path: shots

@@ -20,7 +20,18 @@ public sealed class SampleDomain
         [Sid(1104)] = "CONTOSO\\DLG_Computer_Accounts",
         [Sid(1105)] = "CONTOSO\\DLG_Helpdesk_PwdReset_Staff",
         [Sid(1106)] = "CONTOSO\\DLG_Workstation_Admins_HQ",
+        [Sid(1107)] = "CONTOSO\\DLG_Server_Operators",
+        [Sid(1108)] = "CONTOSO\\DLG_LAPS_Readers",
+        [Sid(1109)] = "CONTOSO\\DLG_BitLocker_Recovery",
+        [Sid(1110)] = "CONTOSO\\DLG_Group_Managers",
     };
+
+    /// <summary>Groups offered when picking who to delegate to in sample mode.</summary>
+    public IReadOnlyList<(string Name, string Sid)> SelectablePrincipals =>
+        Names.Where(kv => !kv.Key.EndsWith("-512") && !kv.Key.EndsWith("-519"))
+             .Select(kv => (kv.Value, kv.Key))
+             .OrderBy(p => p.Value, StringComparer.OrdinalIgnoreCase)
+             .ToList();
 
     // RID 56938 is deliberately missing from the name table: an orphaned SID of a deleted group.
     public static readonly string OrphanSid = Sid(56938);

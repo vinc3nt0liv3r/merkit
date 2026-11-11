@@ -1,0 +1,11 @@
+<Window x:Class="Merkit.App.Views.DialogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        Background="{StaticResource BgBrush}"
+        FontFamily="Segoe UI" FontSize="13"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+  <ContentControl x:Name="Host" IsTabStop="False"/>
+</Window>

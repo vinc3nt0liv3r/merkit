@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>Merkit</AssemblyName>
+    <RootNamespace>Merkit.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\merkit.ico</ApplicationIcon>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <Description>Merkit - Active Directory Delegation Studio</Description>
+  </PropertyGroup>
+
+  <!-- Only the CI "ui-screenshots" job defines this. The shipped application contains no screenshot code. -->
+  <PropertyGroup Condition="'$(MerkitScreenshots)' == 'true'">
+    <DefineConstants>$(DefineConstants);MERKIT_SCREENSHOTS</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\merkit.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Merkit.App.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Merkit.Core\Merkit.Core.csproj" />
+    <ProjectReference Include="..\Merkit.Directory\Merkit.Directory.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,281 @@
+<Window x:Class="Merkit.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:Merkit.App.ViewModels"
+        Title="Merkit - Active Directory Delegation Studio"
+        Width="1360" Height="860" MinWidth="1000" MinHeight="640"
+        Background="{StaticResource BgBrush}"
+        FontFamily="Segoe UI" FontSize="13"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+
+  <Window.Resources>
+    <Style x:Key="ModeButton" TargetType="Button" BasedOn="{StaticResource HeaderButton}">
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding WriteModeEnabled}" Value="True">
+          <Setter Property="Background" Value="{StaticResource AmberBrush}"/>
+          <Setter Property="BorderBrush" Value="{StaticResource AmberBrush}"/>
+          <Setter Property="Foreground" Value="#1B1304"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+
+    <DataTemplate x:Key="ChipTemplate" DataType="{x:Type vm:SummaryChip}">
+      <Border x:Name="Pill" Style="{StaticResource Chip}">
+        <TextBlock x:Name="Label" Text="{Binding Text}" FontSize="12" Foreground="{StaticResource TextBrush}"/>
+      </Border>
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding Kind}" Value="Ok">
+          <Setter TargetName="Pill" Property="Background" Value="{StaticResource OkSoftBrush}"/>
+          <Setter TargetName="Label" Property="Foreground" Value="{StaticResource OkBrush}"/>
+        </DataTrigger>
+        <DataTrigger Binding="{Binding Kind}" Value="Warning">
+          <Setter TargetName="Pill" Property="Background" Value="{StaticResource WarnSoftBrush}"/>
+          <Setter TargetName="Label" Property="Foreground" Value="{StaticResource WarnBrush}"/>
+        </DataTrigger>
+        <DataTrigger Binding="{Binding Kind}" Value="Critical">
+          <Setter TargetName="Pill" Property="Background" Value="{StaticResource DangerSoftBrush}"/>
+          <Setter TargetName="Label" Property="Foreground" Value="{StaticResource DangerBrush}"/>
+        </DataTrigger>
+      </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <Style x:Key="AceRow" TargetType="DataGridRow">
+      <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding SeverityKey}" Value="Protected"><Setter Property="Background" Value="{StaticResource RowProtectedBrush}"/></DataTrigger>
+        <DataTrigger Binding="{Binding SeverityKey}" Value="Warning"><Setter Property="Background" Value="{StaticResource RowWarnBrush}"/></DataTrigger>
+        <DataTrigger Binding="{Binding SeverityKey}" Value="Critical"><Setter Property="Background" Value="{StaticResource RowCriticalBrush}"/></DataTrigger>
+        <DataTrigger Binding="{Binding IsNew}" Value="True"><Setter Property="Background" Value="{StaticResource RowNewBrush}"/></DataTrigger>
+        <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{StaticResource SelectionBrush}"/></Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <Style TargetType="TreeViewItem">
+      <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+      <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+      <Setter Property="Padding" Value="2,0"/>
+    </Style>
+  </Window.Resources>
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <!-- Header -->
+    <Border Grid.Row="0" Background="{StaticResource HeaderBgBrush}" Padding="18,12">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+          <Border Width="34" Height="34" CornerRadius="8" Background="{StaticResource AmberBrush}" Margin="0,0,12,0">
+            <TextBlock Text="M" FontSize="20" FontWeight="Bold" Foreground="#1B1304" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Merkit" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource HeaderTextBrush}"/>
+            <TextBlock Text="Active Directory Delegation Studio" FontSize="11" Foreground="{StaticResource HeaderMutedBrush}"/>
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Margin="28,0,12,0" VerticalAlignment="Center">
+          <TextBlock Text="{Binding ConnectionTitle}" FontWeight="SemiBold" Foreground="{StaticResource HeaderTextBrush}" TextTrimming="CharacterEllipsis"/>
+          <TextBlock Text="{Binding ConnectionDetail}" FontSize="11" Foreground="{StaticResource HeaderMutedBrush}" TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+
+        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button Content="Connect..." Style="{StaticResource HeaderButton}" Command="{Binding ConnectCommand}" Margin="0,0,8,0"/>
+          <Button Content="Sample domain" Style="{StaticResource HeaderButton}" Command="{Binding OpenSampleCommand}" Margin="0,0,8,0"/>
+          <Button Content="Disconnect" Style="{StaticResource HeaderButton}" Command="{Binding DisconnectCommand}" Margin="0,0,8,0"/>
+          <Button Content="Import..." Style="{StaticResource HeaderButton}" Command="{Binding ImportCommand}" Margin="0,0,8,0"/>
+          <Button Content="Backups" Style="{StaticResource HeaderButton}" Command="{Binding OpenVaultCommand}" Margin="0,0,8,0"/>
+          <Button Content="Audit log" Style="{StaticResource HeaderButton}" Command="{Binding OpenAuditCommand}" Margin="0,0,8,0"/>
+          <Button Content="{Binding ModeText}" Style="{StaticResource ModeButton}" Command="{Binding ToggleWriteModeCommand}" Margin="0,0,8,0" MinWidth="120"
+                  ToolTip="Read-only is the default. Write mode lets Merkit change permissions after you review and apply them."/>
+          <Button Content="About" Style="{StaticResource HeaderButton}" Command="{Binding AboutCommand}"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Warning banner (schema or audit problems) -->
+    <Border Grid.Row="1" Background="{StaticResource WarnSoftBrush}" BorderBrush="{StaticResource AmberBrush}" BorderThickness="0,0,0,1" Padding="18,8"
+            Visibility="{Binding HasWarningBanner, Converter={StaticResource BoolToVis}}">
+      <TextBlock Text="{Binding WarningBanner}" TextWrapping="Wrap" Foreground="{StaticResource WarnBrush}"/>
+    </Border>
+
+    <!-- Body -->
+    <Grid Grid.Row="2" Margin="14">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="300" MinWidth="220"/>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- OU tree -->
+        <Border Grid.Column="0" Style="{StaticResource Card}">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="*"/>
+              <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Organizational units" Style="{StaticResource H2}" Margin="14,12,14,8"/>
+            <TreeView x:Name="Tree" Grid.Row="1" BorderThickness="0" Background="Transparent" Margin="6,0"
+                      ItemsSource="{Binding Roots}" SelectedItemChanged="OnTreeSelectionChanged">
+              <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate DataType="{x:Type vm:OuNodeViewModel}" ItemsSource="{Binding Children}">
+                  <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource AmberDarkBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                    <Ellipse Width="8" Height="8" Fill="{StaticResource AmberBrush}" Margin="8,0,0,0" VerticalAlignment="Center"
+                             Visibility="{Binding HasPending, Converter={StaticResource BoolToVis}}" ToolTip="Staged changes, not applied yet"/>
+                  </StackPanel>
+                </HierarchicalDataTemplate>
+              </TreeView.ItemTemplate>
+            </TreeView>
+            <Button Grid.Row="2" Content="New OU..." Command="{Binding NewOuCommand}" Margin="12,8,12,12" HorizontalAlignment="Left"/>
+          </Grid>
+        </Border>
+
+        <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Center" Background="Transparent"/>
+
+        <!-- Permissions -->
+        <Grid Grid.Column="2">
+          <Border Style="{StaticResource Card}" Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+            <Grid Margin="16,14">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+              </Grid.RowDefinitions>
+
+              <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                <TextBlock Text="{Binding SelectedTitle}" Style="{StaticResource H1}" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding SelectedSubtitle}" Style="{StaticResource Muted}" Visibility="{Binding SelectedSubtitle, Converter={StaticResource TextToVis}}"/>
+              </StackPanel>
+
+              <ItemsControl Grid.Row="1" ItemsSource="{Binding Chips}" ItemTemplate="{StaticResource ChipTemplate}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+              </ItemsControl>
+
+              <WrapPanel Grid.Row="2" Margin="0,4,0,0">
+                <Button Content="Add delegation..." Style="{StaticResource PrimaryButton}" Command="{Binding AddDelegationCommand}" Margin="0,0,6,6" Padding="12,5"/>
+                <Button Content="Remove selected" Style="{StaticResource ToolButton}" Command="{Binding RemoveSelectedCommand}"/>
+                <Button Content="Remove orphaned SIDs" Style="{StaticResource ToolButton}" Command="{Binding PruneOrphansCommand}"/>
+                <Button Content="Remove redundant" Style="{StaticResource ToolButton}" Command="{Binding RemoveRedundantCommand}"/>
+                <Button Content="Deletion protection on/off" Style="{StaticResource ToolButton}" Command="{Binding ToggleProtectionCommand}"/>
+                <Button Content="Export..." Style="{StaticResource ToolButton}" Command="{Binding ShowExportCommand}"/>
+                <Button Content="Reload" Style="{StaticResource ToolButton}" Command="{Binding ReloadCommand}"/>
+              </WrapPanel>
+
+              <Grid Grid.Row="3" Margin="0,4,0,8">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,14,0"
+                         ToolTip="Filter by name, SID, right, object or finding"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                  <CheckBox Content="Inherited" IsChecked="{Binding ShowInherited}"/>
+                  <CheckBox Content="System defaults" IsChecked="{Binding ShowSystemDefaults}"/>
+                  <CheckBox Content="Only issues" IsChecked="{Binding OnlyIssues}" Margin="0"/>
+                </StackPanel>
+              </Grid>
+
+              <DataGrid x:Name="AceGrid" Grid.Row="4" ItemsSource="{Binding Rows}" RowStyle="{StaticResource AceRow}"
+                        SelectionChanged="OnGridSelectionChanged" EnableRowVirtualization="True">
+                <DataGrid.Columns>
+                  <DataGridTemplateColumn Width="34" MinWidth="34" Header="">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate><Ellipse Style="{StaticResource SeverityDot}" HorizontalAlignment="Center" ToolTip="{Binding CategoryText}"/></DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTextColumn Header="Trustee" Binding="{Binding Trustee}" Width="2*" MinWidth="140"/>
+                  <DataGridTextColumn Header="Access" Binding="{Binding Access}" Width="70"/>
+                  <DataGridTextColumn Header="Rights" Binding="{Binding Rights}" Width="2*" MinWidth="140"/>
+                  <DataGridTextColumn Header="Applies to" Binding="{Binding AppliesTo}" Width="1.5*" MinWidth="120"/>
+                  <DataGridTextColumn Header="Object / property" Binding="{Binding ObjectType}" Width="1.5*" MinWidth="120"/>
+                  <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="100"/>
+                  <DataGridTextColumn Header="Finding" Binding="{Binding CategoryText}" Width="1.5*" MinWidth="110"/>
+                </DataGrid.Columns>
+              </DataGrid>
+
+              <!-- Details of the selected entry -->
+              <Border Grid.Row="5" Margin="0,10,0,0" Padding="12,10" CornerRadius="6" Background="{StaticResource SurfaceAltBrush}"
+                      BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1"
+                      Visibility="{Binding SelectedRow, Converter={StaticResource NullToVis}}">
+                <StackPanel>
+                  <TextBlock Text="{Binding SelectedRow.Summary}" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding SelectedRow.Notes}" TextWrapping="Wrap" Style="{StaticResource Muted}" Margin="0,4,0,0"
+                             Visibility="{Binding SelectedRow.Notes, Converter={StaticResource TextToVis}}"/>
+                  <TextBlock Text="{Binding SelectedRow.Sid}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+
+              <!-- Staged changes -->
+              <Border Grid.Row="6" Margin="0,10,0,0" Padding="12,10" CornerRadius="6" Background="{StaticResource AmberSoftBrush}"
+                      BorderBrush="{StaticResource AmberBrush}" BorderThickness="1"
+                      Visibility="{Binding HasPendingChanges, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock Text="Staged changes - nothing is written until you review and apply" FontWeight="SemiBold" Foreground="{StaticResource AmberTextBrush}"/>
+                    <ItemsControl ItemsSource="{Binding PendingLines}" Margin="0,4,0,0" MaxHeight="90">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" Foreground="{StaticResource AmberTextBrush}" FontSize="12"/></DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Discard" Command="{Binding DiscardCommand}" Margin="0,0,8,0"/>
+                    <Button Content="Review and apply..." Style="{StaticResource PrimaryButton}" Command="{Binding ReviewApplyCommand}" Padding="14,6"/>
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </Grid>
+          </Border>
+
+          <!-- Start screen -->
+          <Border Style="{StaticResource Card}" Visibility="{Binding ShowStartScreen, Converter={StaticResource BoolToVis}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="560">
+              <TextBlock Text="See who can do what in Active Directory" Style="{StaticResource H1}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
+              <TextBlock TextWrapping="Wrap" TextAlignment="Center" Style="{StaticResource Muted}" Margin="0,10,0,22"
+                         Text="Merkit shows the permissions on your organizational units, points out risky or leftover entries, and helps you delegate safely. It starts read-only and works with the rights of the account you are signed in with."/>
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Content="Connect to a domain..." Style="{StaticResource PrimaryButton}" Command="{Binding ConnectCommand}" Padding="18,9" Margin="0,0,10,0"/>
+                <Button Content="Try the sample domain" Command="{Binding OpenSampleCommand}" Padding="18,9" Margin="0,0,10,0"/>
+                <Button Content="Import from text..." Command="{Binding ImportCommand}" Padding="18,9"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Grid>
+    </Grid>
+
+    <!-- Status bar -->
+    <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="18,6">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+        <ProgressBar Grid.Column="1" Width="120" Height="6" IsIndeterminate="True" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

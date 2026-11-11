@@ -96,6 +96,24 @@ public sealed class FileAuditSink : IAuditSink
         catch (JsonException) { return Genesis; }
     }
 
+    /// <summary>Returns the most recent entries (oldest first) for display. Does not check the hash chain; use <see cref="Verify"/>.</summary>
+    public static IReadOnlyList<AuditEntry> ReadEntries(string path, int maxLast = 500)
+    {
+        var list = new List<AuditEntry>();
+        if (!File.Exists(path)) return list;
+        foreach (var l in File.ReadLines(path))
+        {
+            if (l.Length == 0) continue;
+            try
+            {
+                var line = JsonSerializer.Deserialize<Line>(l, Json);
+                if (line != null) list.Add(line.Entry);
+            }
+            catch (JsonException) { /* shown as a verification failure by Verify */ }
+        }
+        return list.Count > maxLast ? list.Skip(list.Count - maxLast).ToList() : list;
+    }
+
     /// <summary>Returns (true, 0) when the chain is intact, otherwise (false, 1-based line number of the first bad line).</summary>
     public static (bool Intact, int BadLine) Verify(string path)
     {
